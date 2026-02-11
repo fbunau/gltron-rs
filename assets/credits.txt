@@ -1,0 +1,45 @@
+# glTron-rs
+
+**Ported to Rust and enhanced by** *Florin Bunau*
+
+I have fond memories of playing the original game with my friends on split screen back in the day.
+
+So I thought it is the best use case to learn some Rust and see how far AI agent productivity goes.
+
+Check out the project page at: https://github.com/fbunau/gltron-rs
+
+And the original page at: http://www.gltron.org/
+
+---
+
+# GLTron - Original Credits
+
+**GLTron is written by** *Andreas Umbach*
+
+---
+
+## Contributors
+
+**Programming**  *Darrell Walisser*, *Nicolas Deniaud*,
+                 *Todd Kirby*, *Andy Howe*, *Jon Atkins*
+**Art**  *Nicolas Zimmermann*, *Charles Babbage*, *Tracy Brown*
+**Music**  *Peter Hajba*
+**Sound**  *Damon Law*
+
+---
+
+## Additional Thanks To
+
+*Xavier Bouchouk*, *Mike Field*, *Steve Baker*,
+*Jean-Bruno Richard*, *Andrey Zakhkatov*,
+*Bjonar Henden*, *Shaul Kedem*, *Jonas Gustavsson*,
+*Mattias Engdegard*, *Ray Helm*, *Thomas Flynn*,
+*Martin Fierz*, *Joseph Valenzuela*, *Ryan Gordon*,
+*Sam Lantinga*, *Patrick McCarthy*
+
+---
+
+## Sponsors
+
+**3DFX**  *Voodoo5 5500 Graphics Card*
+**Right Hemisphere**  *3D Exploration Software*

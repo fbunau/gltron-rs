@@ -1,0 +1,20 @@
+{
+  "hosting": {
+    "public": "web",
+    "ignore": ["firebase.json", "**/.*"],
+    "headers": [
+      {
+        "source": "**/*.wasm",
+        "headers": [
+          { "key": "Content-Type", "value": "application/wasm" }
+        ]
+      },
+      {
+        "source": "**/*.js",
+        "headers": [
+          { "key": "Content-Type", "value": "application/javascript" }
+        ]
+      }
+    ]
+  }
+}

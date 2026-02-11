@@ -1,0 +1,15 @@
+/target
+/screenshots
+/presets
+/web/pkg
+.miniserve.pid
+.firebase/
+.firebaserc
+
+# IDE
+/.idea/
+*.iml
+.vscode/
+
+# OS
+**/.DS_Store

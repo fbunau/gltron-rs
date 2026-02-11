@@ -1,0 +1,7 @@
+# macOS Homebrew: set LIBRARY_PATH so linker finds system libs (e.g. libobjc)
+# Harmless on other platforms; remove or adjust if not using Homebrew.
+[env]
+LIBRARY_PATH = "/opt/homebrew/lib"
+
+[target.wasm32-unknown-unknown]
+rustflags = ['--cfg', 'getrandom_backend="wasm_js"']

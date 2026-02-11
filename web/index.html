@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+<title>GLTron</title>
+<style>
+  body { margin: 0; background: #000; overflow: hidden; color: #0f0; font-family: monospace; }
+  canvas { width: 100vw; height: 100vh; display: block; touch-action: none; }
+  #status { position: absolute; top: 20px; left: 20px; font-size: 16px; z-index: 10; }
+  #error { position: absolute; top: 20px; left: 20px; font-size: 14px; z-index: 10;
+           color: #f44; white-space: pre-wrap; max-width: 90vw; }
+
+  /* Fullscreen prompt (mobile) */
+  #fullscreen-prompt {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.92);
+    color: #0f0;
+    font-family: monospace;
+    font-size: 18px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 20px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #fullscreen-prompt .icon { font-size: 48px; }
+  #fullscreen-prompt .hint { font-size: 13px; color: #0a0; }
+
+  /* Touch controls overlay */
+  #touch-controls {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 20;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  .touch-btn {
+    position: absolute;
+    pointer-events: auto;
+    border-radius: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.3);
+    font-family: monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .touch-btn.pressed {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  /* === D-pad (left side) — cross pattern, always visible === */
+  #btn-left  { bottom: 100px; left: 5px;  width: 60px; height: 60px; font-size: 22px; }
+  #btn-right { bottom: 100px; left: 80px; width: 60px; height: 60px; font-size: 22px; }
+  /* Up/Down only in menu */
+  #btn-up    { bottom: 170px; left: 40px; width: 60px; height: 60px; font-size: 22px; }
+  #btn-down  { bottom: 25px;  left: 40px; width: 60px; height: 60px; font-size: 22px; }
+
+  /* === Menu-only buttons (right side) === */
+  #btn-ok {
+    bottom: 30px; right: 24px;
+    width: 70px; height: 70px;
+    font-size: 16px; font-weight: bold;
+  }
+  #btn-menu-back {
+    bottom: 110px; right: 24px;
+    width: 70px; height: 70px;
+    font-size: 14px; font-weight: bold;
+  }
+
+  /* === Game-only buttons (right side) === */
+  /* Boost — transparent circle concentric with GL speedometer
+     Speedometer: outer_r=11vh, center right:14.85vh bottom:23.1vh */
+  #btn-boost {
+    bottom: calc(11vh * 1.1);
+    right: calc(11vh * 0.35);
+    width: 22vh; height: 22vh;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
+    color: rgba(255, 255, 255, 0.0);
+    font-size: 0;
+  }
+  #btn-boost.pressed {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  /* Game back — rectangular, same width as boost circle, above it */
+  #btn-game-back {
+    bottom: calc(11vh * 1.1 + 22vh + 8px);
+    right: calc(11vh * 0.35);
+    width: 22vh; height: 44px;
+    font-size: 14px; font-weight: bold;
+  }
+
+  /* === State-driven visibility === */
+  /* Menu mode (default): show menu buttons, hide game buttons */
+  .game-only { display: none !important; }
+  /* Playing mode: show game buttons, hide menu-only buttons */
+  html[data-state="playing"] .menu-only { display: none !important; }
+  html[data-state="playing"] .game-only { display: flex !important; }
+  /* Paused mode: show both menu nav (up/down/ok/back) AND game back, hide boost */
+  html[data-state="paused"] .menu-only { display: flex !important; }
+  html[data-state="paused"] .game-only { display: none !important; }
+</style>
+</head>
+<body>
+<div id="status">Loading GLTron-rs...</div>
+<div id="error"></div>
+
+<!-- Fullscreen prompt (mobile) -->
+<div id="fullscreen-prompt">
+  <div class="icon">&#x26A1;</div>
+  <div>Tap to play</div>
+  <div class="hint">Rotate device to landscape for best experience</div>
+</div>
+
+<!-- Touch controls overlay -->
+<div id="touch-controls">
+  <!-- D-pad left/right (always visible) -->
+  <div id="btn-left" class="touch-btn">&#x25C0;</div>
+  <div id="btn-right" class="touch-btn">&#x25B6;</div>
+  <!-- D-pad up/down (menu only) -->
+  <div id="btn-up" class="touch-btn menu-only">&#x25B2;</div>
+  <div id="btn-down" class="touch-btn menu-only">&#x25BC;</div>
+  <!-- Menu buttons (right side) -->
+  <div id="btn-ok" class="touch-btn menu-only">OK</div>
+  <div id="btn-menu-back" class="touch-btn menu-only">BACK</div>
+  <!-- Game buttons (right side) -->
+  <div id="btn-boost" class="touch-btn game-only"></div>
+  <div id="btn-game-back" class="touch-btn game-only">&larr; BACK</div>
+</div>
+
+<script type="module">
+  const status = document.getElementById('status');
+  const error = document.getElementById('error');
+  try {
+    status.textContent = 'Loading WASM module...';
+    const { default: init } = await import('./pkg/gltron.js');
+    status.textContent = 'Initializing...';
+    await init();
+    status.textContent = '';
+  } catch (e) {
+    status.textContent = '';
+    error.textContent = 'Error: ' + e.message + '\n\n' + e.stack;
+    console.error(e);
+  }
+</script>
+
+<script>
+// --- Mobile touch support ---
+(function() {
+  var isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  if (!isTouchDevice) return;
+
+  var touchControls = document.getElementById('touch-controls');
+  var fullscreenPrompt = document.getElementById('fullscreen-prompt');
+
+  touchControls.style.display = 'block';
+  fullscreenPrompt.style.display = 'flex';
+
+  // --- Fullscreen + orientation lock ---
+  async function goFullscreen() {
+    fullscreenPrompt.style.display = 'none';
+    try {
+      await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+    } catch(e) { console.warn('Fullscreen failed:', e); }
+    try {
+      await screen.orientation.lock('landscape');
+    } catch(e) { console.warn('Orientation lock failed:', e); }
+  }
+
+  fullscreenPrompt.addEventListener('click', goFullscreen);
+  fullscreenPrompt.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    goFullscreen();
+  }, { passive: false });
+
+  // --- Touch-to-keyboard dispatch ---
+  function getCanvas() {
+    return document.querySelector('canvas');
+  }
+
+  function dispatchKey(code, key, type) {
+    var canvas = getCanvas();
+    if (!canvas) return;
+    canvas.focus();
+    canvas.dispatchEvent(new KeyboardEvent(type, {
+      code: code,
+      key: key,
+      bubbles: true,
+      cancelable: true,
+    }));
+  }
+
+  // Button ID -> [KeyboardEvent.code, KeyboardEvent.key]
+  var buttonMap = {
+    'btn-up':        ['ArrowUp',    'ArrowUp'],
+    'btn-down':      ['ArrowDown',  'ArrowDown'],
+    'btn-left':      ['ArrowLeft',  'ArrowLeft'],
+    'btn-right':     ['ArrowRight', 'ArrowRight'],
+    'btn-ok':        ['Space',      ' '],
+    'btn-menu-back': ['Escape',     'Escape'],
+    'btn-boost':     ['Space',      ' '],
+    'btn-game-back': ['Escape',     'Escape'],
+  };
+
+  // Track active touches per button for multi-touch
+  var activeTouches = {};
+
+  for (var _btnId in buttonMap) { (function(btnId) {
+    var entry = buttonMap[btnId];
+    var code = entry[0], key = entry[1];
+    var btn = document.getElementById(btnId);
+    if (!btn) return;
+
+    btn.addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        activeTouches[e.changedTouches[i].identifier] = btnId;
+      }
+      btn.classList.add('pressed');
+      dispatchKey(code, key, 'keydown');
+    }, { passive: false });
+
+    btn.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        delete activeTouches[e.changedTouches[i].identifier];
+      }
+      var stillPressed = false;
+      for (var id in activeTouches) {
+        if (activeTouches[id] === btnId) { stillPressed = true; break; }
+      }
+      if (!stillPressed) {
+        btn.classList.remove('pressed');
+        dispatchKey(code, key, 'keyup');
+      }
+    }, { passive: false });
+
+    btn.addEventListener('touchcancel', function(e) {
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        delete activeTouches[e.changedTouches[i].identifier];
+      }
+      btn.classList.remove('pressed');
+      dispatchKey(code, key, 'keyup');
+    }, { passive: false });
+  })(_btnId); }
+
+  // Prevent double-tap zoom
+  var lastTouchEnd = 0;
+  document.addEventListener('touchend', function(e) {
+    var now = Date.now();
+    if (now - lastTouchEnd <= 300) {
+      e.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, { passive: false });
+})();
+</script>
+</body>
+</html>
