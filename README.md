@@ -18,6 +18,10 @@ GLTron brought this experience to the desktop as an open-source OpenGL game. **G
 
 <img src="docs/image/old.gif" width="600"/>
 
+**Play with up to 4 friends in local splitscreen**
+
+<img src="docs/image/multi.gif" width="600"/>
+
 ## Enhancements over GLTron 0.70
 
 - Web version with mobile touch controls (WASM)
