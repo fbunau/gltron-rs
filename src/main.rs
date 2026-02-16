@@ -617,8 +617,7 @@ impl App {
                         let hy = ty - line_gap;
                         assets::draw_text_shadowed(r, font, hx, hy, hint_sz, hint, [0.7, 0.8, 1.0, 0.85]);
 
-                        // Controls bubble: separate pill below, one player at a time (vertical)
-                        // Collect human players
+                        // Per-player control pills positioned in each player's viewport area
                         struct PlayerCtrl { idx: usize, left: String, right: String, boost: String }
                         let mut humans: Vec<PlayerCtrl> = Vec::new();
                         for (i, p) in gs.players.iter().enumerate() {
@@ -634,108 +633,101 @@ impl App {
                         }
 
                         if !humans.is_empty() {
-                            let ctrl_sz = font_sz * 0.75;
-                            let ctrl_cw = ctrl_sz * 0.72;
-                            let ctrl_line_h = ctrl_sz * 1.5;
-                            let key_col = [1.0, 1.0, 0.4, 0.95];
-                            let label_col = [0.75, 0.8, 0.9, 0.8];
-                            let pill_gap = font_sz * 0.5;
-
+                            let n = humans.len();
                             let boost_on = gs.rules.booster.enabled;
                             let wall_accel_on = gs.rules.wall_accel;
 
-                            // Lines per player: header + turn left + turn right + boost + wall accel
-                            let lines_per_player = 5;
-                            let total_lines = humans.len() * lines_per_player
-                                + (humans.len() - 1); // gaps between players
-                            let cp_pad_x = ctrl_sz * 2.0;
-                            let cp_pad_y = ctrl_sz * 0.8;
+                            let win_w = w;
+                            let win_h = h;
+                            for (vp_idx, hc) in humans.iter().enumerate() {
+                                // Get viewport rect for this player
+                                let (vx, vy, vw, vh) = render::viewport_rect(vp_idx, n, win_w, win_h);
+                                let vxf = vx as f32;
+                                let vyf = vy as f32;
+                                let vwf = vw as f32;
+                                let vhf = vh as f32;
+                                let vcx = vxf + vwf / 2.0; // viewport center x
 
-                            // Build all text lines for sizing
-                            let boost_text = if boost_on { format!("boost  [{}]", humans[0].boost) }
-                                else { "boost disabled".into() };
-                            let wa_text = if wall_accel_on { "wall accel: enabled".to_string() }
-                                else { "wall accel: disabled".to_string() };
+                                // Scale font to viewport size
+                                let ctrl_sz = (vhf * 0.045).min(28.0).max(12.0);
+                                let ctrl_cw = ctrl_sz * 0.72;
+                                let ctrl_line_h = ctrl_sz * 1.45;
+                                let key_col = [1.0, 1.0, 0.4, 0.95];
+                                let label_col = [0.75, 0.8, 0.9, 0.8];
+                                let dim_col = [0.5, 0.5, 0.6, 0.6];
+                                let enabled_col = [0.1, 0.9, 0.3, 0.9];
 
-                            let mut max_line_w = 0.0_f32;
-                            for h in &humans {
-                                let header = format!("P{} controls", h.idx + 1);
+                                // Compute pill size
+                                let lines_count = 5; // header + left + right + boost + wall accel
+                                let cp_pad_x = ctrl_sz * 1.5;
+                                let cp_pad_y = ctrl_sz * 0.6;
+
+                                let mut max_line_w = 0.0_f32;
+                                let header = format!("P{} controls", hc.idx + 1);
                                 max_line_w = max_line_w.max(header.len() as f32 * ctrl_cw);
-                                let left_line = format!("turn left  [{}]", h.left);
-                                let right_line = format!("turn right  [{}]", h.right);
+                                let left_line = format!("turn left  [{}]", hc.left);
+                                let right_line = format!("turn right [{}]", hc.right);
                                 max_line_w = max_line_w.max(left_line.len() as f32 * ctrl_cw);
                                 max_line_w = max_line_w.max(right_line.len() as f32 * ctrl_cw);
-                            }
-                            max_line_w = max_line_w.max(boost_text.len() as f32 * ctrl_cw);
-                            max_line_w = max_line_w.max(wa_text.len() as f32 * ctrl_cw);
+                                if boost_on {
+                                    let bl = format!("boost  [{}]", hc.boost);
+                                    max_line_w = max_line_w.max(bl.len() as f32 * ctrl_cw);
+                                }
 
-                            let cp_w = max_line_w + cp_pad_x * 2.0;
-                            let cp_h = cp_pad_y * 2.0 + total_lines as f32 * ctrl_line_h;
-                            let cp_x = (wf - cp_w) / 2.0;
-                            let cp_y = py - pill_gap - cp_h;
-                            let cp_radius = (cp_h / 2.0).min(cp_w / 2.0);
+                                let cp_w = max_line_w + cp_pad_x * 2.0;
+                                let cp_h = cp_pad_y * 2.0 + lines_count as f32 * ctrl_line_h;
+                                let cp_x = (vcx - cp_w / 2.0).max(vxf + 4.0).min(vxf + vwf - cp_w - 4.0);
+                                let cp_y = vyf + vhf * 0.05; // near bottom of viewport
+                                let cp_radius = ctrl_sz * 0.5;
 
-                            draw_pill(r, cp_x, cp_y, cp_w, cp_h, cp_radius);
+                                draw_pill(r, cp_x, cp_y, cp_w, cp_h, cp_radius);
 
-                            // Helper to draw "label  [key]" with highlighted key
-                            let draw_key_line = |r: &mut Renderer, font: &assets::BitmapFont,
-                                                  y: f32, label: &str, key: &str| {
-                                let pre = format!("{}  [", label);
-                                let post = "]";
-                                let total_w = (pre.len() + key.len() + post.len()) as f32 * ctrl_cw;
-                                let lx = (wf - total_w) / 2.0;
-                                assets::draw_text_shadowed(r, font, lx, y, ctrl_sz, &pre, label_col);
-                                let kx = lx + pre.len() as f32 * ctrl_cw;
-                                assets::draw_text_shadowed(r, font, kx, y, ctrl_sz, key, key_col);
-                                let bx = kx + key.len() as f32 * ctrl_cw;
-                                assets::draw_text_shadowed(r, font, bx, y, ctrl_sz, post, label_col);
-                            };
+                                // Helper to draw "label  [key]" centered in this pill
+                                let draw_key_line_in = |r: &mut Renderer, font: &assets::BitmapFont,
+                                                         y: f32, label: &str, key: &str| {
+                                    let pre = format!("{}  [", label);
+                                    let post = "]";
+                                    let total_w = (pre.len() + key.len() + post.len()) as f32 * ctrl_cw;
+                                    let lx = vcx - total_w / 2.0;
+                                    assets::draw_text_shadowed(r, font, lx, y, ctrl_sz, &pre, label_col);
+                                    let kx = lx + pre.len() as f32 * ctrl_cw;
+                                    assets::draw_text_shadowed(r, font, kx, y, ctrl_sz, key, key_col);
+                                    let bx = kx + key.len() as f32 * ctrl_cw;
+                                    assets::draw_text_shadowed(r, font, bx, y, ctrl_sz, post, label_col);
+                                };
 
-                            let dim_col = [0.5, 0.5, 0.6, 0.6];
-                            let enabled_col = [0.1, 0.9, 0.3, 0.9];
+                                let mut cur_y = cp_y + cp_h - cp_pad_y - ctrl_sz;
 
-                            let mut cur_y = cp_y + cp_h - cp_pad_y - ctrl_sz;
-                            for (hi, h) in humans.iter().enumerate() {
                                 // Player header in player color
-                                let pc = &MODEL_DIFFUSE[h.idx];
-                                let header = format!("P{} controls", h.idx + 1);
+                                let pc = &MODEL_DIFFUSE[hc.idx];
                                 let hw = header.len() as f32 * ctrl_cw;
                                 assets::draw_text_shadowed(r, font,
-                                    (wf - hw) / 2.0, cur_y, ctrl_sz,
+                                    vcx - hw / 2.0, cur_y, ctrl_sz,
                                     &header, [pc[0], pc[1], pc[2], 1.0]);
                                 cur_y -= ctrl_line_h;
 
-                                // Turn left / right
-                                draw_key_line(r, font, cur_y, "turn left", &h.left);
+                                draw_key_line_in(r, font, cur_y, "turn left", &hc.left);
                                 cur_y -= ctrl_line_h;
-                                draw_key_line(r, font, cur_y, "turn right", &h.right);
+                                draw_key_line_in(r, font, cur_y, "turn right", &hc.right);
                                 cur_y -= ctrl_line_h;
 
-                                // Boost line
                                 if boost_on {
-                                    draw_key_line(r, font, cur_y, "boost", &h.boost);
+                                    draw_key_line_in(r, font, cur_y, "boost", &hc.boost);
                                 } else {
                                     let text = "boost disabled";
                                     let tw = text.len() as f32 * ctrl_cw;
-                                    assets::draw_text_shadowed(r, font, (wf - tw) / 2.0, cur_y, ctrl_sz, text, dim_col);
+                                    assets::draw_text_shadowed(r, font, vcx - tw / 2.0, cur_y, ctrl_sz, text, dim_col);
                                 }
                                 cur_y -= ctrl_line_h;
 
-                                // Wall acceleration status
                                 if wall_accel_on {
-                                    let text = "wall accel: enabled";
+                                    let text = "wall accel: on";
                                     let tw = text.len() as f32 * ctrl_cw;
-                                    assets::draw_text_shadowed(r, font, (wf - tw) / 2.0, cur_y, ctrl_sz, text, enabled_col);
+                                    assets::draw_text_shadowed(r, font, vcx - tw / 2.0, cur_y, ctrl_sz, text, enabled_col);
                                 } else {
-                                    let text = "wall accel: disabled";
+                                    let text = "wall accel: off";
                                     let tw = text.len() as f32 * ctrl_cw;
-                                    assets::draw_text_shadowed(r, font, (wf - tw) / 2.0, cur_y, ctrl_sz, text, dim_col);
-                                }
-                                cur_y -= ctrl_line_h;
-
-                                // Gap between players
-                                if hi < humans.len() - 1 {
-                                    cur_y -= ctrl_line_h;
+                                    assets::draw_text_shadowed(r, font, vcx - tw / 2.0, cur_y, ctrl_sz, text, dim_col);
                                 }
                             }
                         }

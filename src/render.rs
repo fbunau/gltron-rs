@@ -307,7 +307,7 @@ fn setup_world_lights(r: &mut Renderer) {
 }
 
 /// Calculate viewport rectangle for split-screen.
-fn viewport_rect(idx: usize, count: usize, w: u32, h: u32) -> (i32, i32, i32, i32) {
+pub fn viewport_rect(idx: usize, count: usize, w: u32, h: u32) -> (i32, i32, i32, i32) {
     if count <= 1 {
         return (0, 0, w as i32, h as i32);
     }
