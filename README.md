@@ -10,16 +10,13 @@ GLTron brought this experience to the desktop as an open-source OpenGL game. **G
 
 ## GLTron-rs vs GLTron 0.70
 
-<table>
-<tr>
-<td align="center"><strong>GLTron-rs (Rust rewrite)</strong></td>
-<td align="center"><strong>GLTron 0.70 (Original)</strong></td>
-</tr>
-<tr>
-<td><img src="docs/image/new.gif" width="600"/></td>
-<td><img src="docs/image/old.gif" width="600"/></td>
-</tr>
-</table>
+**GLTron-rs (Rust rewrite)**
+
+<img src="docs/image/new.gif" width="600"/>
+
+**GLTron 0.70 (Original)**
+
+<img src="docs/image/old.gif" width="600"/>
 
 ## Enhancements over GLTron 0.70
 
