@@ -163,9 +163,19 @@ const SPIRE_VECTORS: [[f32; 3]; 21] = [
     [-1.00,  0.20,  0.00],
 ];
 
-/// Main explosion entry point.
-/// Draws impact effects (shockwaves, spires, glow) and scatters the cycle model.
-pub fn draw_explosion(r: &mut Renderer, visual: &mut PlayerVisual, dt: f32, mesh: &GlMesh) {
+/// Advance explosion radii for all visuals (call once per frame, outside viewport loop).
+pub fn tick_explosions(visuals: &mut [PlayerVisual], dt: f32) {
+    for visual in visuals.iter_mut() {
+        if visual.crash_pos.is_none() || visual.exp_radius >= EXP_RADIUS_MAX {
+            continue;
+        }
+        visual.exp_radius += dt * EXP_RADIUS_DELTA;
+        visual.impact_radius += dt * IMPACT_RADIUS_DELTA;
+    }
+}
+
+/// Render a single explosion (read-only on visual, call inside each viewport).
+pub fn draw_explosion(r: &mut Renderer, visual: &PlayerVisual, mesh: &GlMesh) {
     let crash_pos = match visual.crash_pos {
         Some(p) => p,
         None => return,
@@ -174,10 +184,6 @@ pub fn draw_explosion(r: &mut Renderer, visual: &mut PlayerVisual, dt: f32, mesh
     if visual.exp_radius >= EXP_RADIUS_MAX {
         return; // explosion finished
     }
-
-    // Advance radii
-    visual.exp_radius += dt * EXP_RADIUS_DELTA;
-    visual.impact_radius += dt * IMPACT_RADIUS_DELTA;
 
     let player_color = visual.diffuse;
     let crash_angle = visual.crash_angle;

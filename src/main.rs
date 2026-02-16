@@ -543,8 +543,8 @@ impl App {
                 }
 
                 // Render
+                render::tick_explosions(gs);
                 render::draw_game(r, gs, &self.settings, textures, models, font, &self.key_bindings, w, h);
-                render::draw_explosions(r, gs, models);
 
                 // Draw pause overlay
                 if gs.pause == PauseState::Suspended {

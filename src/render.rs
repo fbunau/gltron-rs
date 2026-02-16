@@ -226,6 +226,11 @@ pub fn draw_game(
             }
         }
 
+        // === 7. Draw explosions (inside viewport) ===
+        for visual in state.visuals.iter() {
+            effects::draw_explosion(r, visual, &models.cycle_high);
+        }
+
         r.set_scissor_test(false);
     }
 
@@ -278,12 +283,10 @@ pub fn draw_game(
     draw_global_hud(r, state, settings, font, window_w, window_h);
 }
 
-/// Draw explosions (needs mutable state).
-pub fn draw_explosions(r: &mut Renderer, state: &mut GameState, models: &assets::Models) {
+/// Tick explosion radii (call once per frame, outside viewport loop).
+pub fn tick_explosions(state: &mut GameState) {
     let dt = state.time.dt as f32;
-    for visual in &mut state.visuals {
-        effects::draw_explosion(r, visual, dt, &models.cycle_high);
-    }
+    effects::tick_explosions(&mut state.visuals, dt);
 }
 
 /// Setup world lighting.
