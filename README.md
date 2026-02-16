@@ -65,6 +65,12 @@ cargo install miniserve
 ./web-run.sh stop      # stop server
 ```
 
+## Disclaimer
+
+This is a hobby project started with the goal of learning Rust and seeing how far I can push agentic AI coding.
+
+All of this code has been done with AI so far, but I do plan on doing a thorough manual pass and clean it up
+
 ## License
 
 This project is a derivative work of [GLTron](http://www.gltron.org/) by Andreas Umbach, originally released under the GNU General Public License.
