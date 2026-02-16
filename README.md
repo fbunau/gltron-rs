@@ -16,8 +16,8 @@ GLTron brought this experience to the desktop as an open-source OpenGL game. **G
 <td align="center"><strong>GLTron 0.70 (Original)</strong></td>
 </tr>
 <tr>
-<td><img src="docs/image/new.gif" width="400"/></td>
-<td><img src="docs/image/old.gif" width="400"/></td>
+<td><img src="docs/image/new.gif" width="600"/></td>
+<td><img src="docs/image/old.gif" width="600"/></td>
 </tr>
 </table>
 
