@@ -24,7 +24,7 @@ GLTron brought this experience to the desktop as an open-source OpenGL game. **G
 
 ## Enhancements over GLTron 0.70
 
-- Web version with mobile touch controls (WASM)
+- Web version + Mobile touch controls (WASM)
 - Stencil-based planar reflections (missing in 0.70)
 - HUD speedometer (similar to later versions of GLTron)
 - Spectating view after death
